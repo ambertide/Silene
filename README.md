@@ -4,7 +4,8 @@ Silene or more formally `com.vulpex.silene` is a  Java Library that can be used 
 interract with ProjectGeorge backend in pure Java with OOP.
 
 Just get the `com.vulpex.silene.jar` file to your libraries directory, and 
-`import com.vulpex.silene.*` to start using the classes.
+`import com.vulpex.silene.*` to start using the classes. You will also need the 
+[Google JSON Library (gson)](https://github.com/google/gson)
 
 > :warning: You can read extensive Javadoc documention in docs/index.html after cloning
 > the repository.
