@@ -9,7 +9,7 @@ public class Lecture {
     private final String studentName;
     private final Date scheduledDate;
     private LectureState state;
-    private int lectureId;
+    private final int lectureId;
 
 
     /**
@@ -19,10 +19,17 @@ public class Lecture {
      * @param state State of the lecture.
      * @param scheduledDate the Date of the lecture.
      */
-    Lecture (String tutorName, String studentName, LectureState state, Date scheduledDate) {
+    Lecture (int lectureId, String tutorName, String studentName, LectureState state, Date scheduledDate) {
+        this.lectureId = lectureId;
         this.tutorName = tutorName;
         this.studentName = studentName;
         this.scheduledDate  = scheduledDate;
         this.state = state;
     }
+
+    protected void confirmLecture() {
+        this.state = LectureState.CONFIRMED;
+    }
+
+    public int getLectureId() { return this.lectureId; }
 }

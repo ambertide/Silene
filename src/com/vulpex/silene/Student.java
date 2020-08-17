@@ -2,6 +2,7 @@ package com.vulpex.silene;
 
 import com.google.gson.Gson;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -28,7 +29,30 @@ public class Student extends User {
         userCredentials.put("locality", locality);
         Gson gson = new Gson();
         String jsonInput = gson.toJson(userCredentials);
-        Server.sendRequest("/api/register_student", "POST", "", jsonInput);
+        Server.sendRequest("/api/register_student", "PUT", "", jsonInput);
+    }
+
+    /**
+     * Request a lecture from the server between this user and tutor.
+     * @param tutorUsername Username of the tutor.
+     * @param scheduled Scheduled date of the lecture.
+     * @throws InvalidUserSessionException When user session has expired.
+     * @throws APIAuthorizationException When API key fails to authorise.
+     * @throws UnsatisfiableCriteriaException When the tutor's days are filled.
+     * @throws ServerNotInitialisedException When the server is not initialised.
+     * @throws ServerException When an unexpected error occurs on Server.
+     * @throws Exception When any unexpected error occurs.
+     */
+    public void requestLecture(String tutorUsername, Date scheduled) throws InvalidUserSessionException, APIAuthorizationException,
+            UnsatisfiableCriteriaException, ServerNotInitialisedException,
+            ServerException, Exception {
+        Gson gson = new Gson();
+        Map<String, Object> map = new HashMap<String, Object>(); // Since Java does not have a functional
+        // Type system...
+        map.put("tutor_username", tutorUsername);
+        map.put("scheduled", scheduled.getTime());
+        String jsonInput = gson.toJson(map);
+        Server.sendRequest("/api/request_lecture", "PUT", this.authorisation_token, jsonInput);
     }
 
 }

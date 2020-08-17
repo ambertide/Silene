@@ -42,6 +42,22 @@ public class Tutor extends User {
         userCredentials.put("allowedWeekdays", allowedWeekdays);
         Gson gson = new Gson();
         String jsonInput = gson.toJson(userCredentials);
-        Server.sendRequest("/api/register_tutor", "POST", "", jsonInput);
+        Server.sendRequest("/api/register_tutor", "PUT", "", jsonInput);
+    }
+
+    /**
+     * Confirm a lecture.
+     * @param lecture Lecture to be confirmed.
+     * @throws InvalidUserSessionException
+     * @throws ServerException
+     * @throws Exception
+     */
+    public void confirmLecture(Lecture lecture) throws InvalidUserSessionException, ServerException, Exception {
+        Map<String, Integer> argument = new HashMap<String, Integer>();
+        argument.put("lecture_id", lecture.getLectureId());
+        Gson gson = new Gson();
+        String jsonInput = gson.toJson(argument);
+        Server.sendRequest("/api/confirm_lecture", "PATCH", this.authorisation_token, jsonInput);
+        lecture.confirmLecture();
     }
 }

@@ -1,4 +1,4 @@
-# Silene Middleware Library v0.1
+# Silene Middleware Library v0.1.1
 
 Silene or more formally `com.vulpex.silene` is a  Java Library that can be used to
 interract with ProjectGeorge backend in pure Java with OOP.

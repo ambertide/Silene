@@ -3,6 +3,7 @@ package com.vulpex.silene;
 
 import com.google.gson.Gson;
 
+import java.sql.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -31,7 +32,7 @@ class InvalidFilterException extends Exception {
 public abstract class User {
     private String username;
     private String name;
-    private String authorisation_token;
+    protected String authorisation_token;
     private String locality;
 
     public User(String username, String name, String authorisation_token, String locality) {
@@ -50,8 +51,16 @@ public abstract class User {
         SileneResponse sileneResponse = Server.sendRequest("/api/list_lectures", "GET",
                 this.authorisation_token, "");
         Gson gson = new Gson();
-        HashMap hashMap = gson.fromJson(sileneResponse.getJsonResponse(), HashMap.class);
-        return null;
+        List<Lecture> lectures = new LinkedList<Lecture>();
+        List<Map<String, Object>> lectureSpecs = gson.fromJson(sileneResponse.getJsonResponse(), List.class);
+        for (Map<String, Object> lectureSpec : lectureSpecs) {
+            Lecture lecture = new Lecture((int) lectureSpec.get("obj_id"), (String) lectureSpec.get("tutor"),
+                    (String) lectureSpec.get("student"),
+                    LectureState.valueOf(lectureSpec.get("state").toString().toUpperCase()),
+                    Date.valueOf((String) lectureSpec.get("time")));
+            lectures.add(lecture);
+        }
+        return lectures;
     }
 
     /**
@@ -95,53 +104,77 @@ public abstract class User {
 
     /**
      * Get the type of the user given its login token.
-     * @param authorisation_token Login token.
+     * @param username Username of the user.
      * @return The user type.
      * @throws Exception Any unexpected exception due to server.
      */
-    private static UserType getUserType(String authorisation_token) throws Exception {
+    private static UserType getUserType(String username) throws Exception {
+        Gson gson = new Gson();
+        Map<String, String> map = new HashMap<String, String>();
+        map.put("username", username);
         SileneResponse response = Server.sendRequest("/api/get_user_type", "POST",
-                authorisation_token, "");
+                "", gson.toJson(map));
         return UserType.valueOf(response.getJsonResponse().toUpperCase());
     }
 
     /**
      * Get user credentials from server.
-     * @param authorisation_token Login token.
+     * @param username Username of the user.
      * @return The user credentials in a map.
      * @throws Exception Any unexpected exception.
      */
-    private static Map<String, String> getUserProfile(String authorisation_token) throws Exception {
+    public static Map<String, String> getUserProfile(String username) throws Exception {
         Gson gson = new Gson();
+        Map<String, String> argumentMap = new HashMap<String, String>();
+        argumentMap.put("username", username);
         SileneResponse response = Server.sendRequest("/api/get_user_profile", "POST",
-                authorisation_token, "");
+                "", gson.toJson(argumentMap));
         HashMap<String, String> userCredentials = (HashMap) gson.fromJson(response.getJsonResponse(), HashMap.class);
         return userCredentials;
     }
 
     /**
      * Create a student object.
-     * @param authorisation_token Auth token to be used to login to server.
+     * @param username Username of the user..
      * @return the student object.
      * @throws Exception Any unexpected exception.
      */
-    private static Student createStudentFrom(String authorisation_token) throws Exception {
-        Map<String, String> userCredentials = getUserProfile(authorisation_token);
+    private static Student createStudentFrom(String username) throws Exception {
+        Map<String, String> userCredentials = getUserProfile(username);
         return new Student(userCredentials.get("username"), userCredentials.get("name"),
-                authorisation_token, userCredentials.get("locality"));
+                "", userCredentials.get("locality"));
     }
 
     /**
      * Create a Tutor object given auth token.
-     * @param authorisation_token Auth token to login to server.
+     * @param username Username of the user.
      * @return the created Tutor object.
      * @throws Exception Any unexpected exception.
      */
-    private static Tutor createTutorFrom(String authorisation_token) throws Exception {
-        Map<String, String> userCredentials = getUserProfile(authorisation_token);
+    private static Tutor createTutorFrom(String username) throws Exception {
+        Map<String, String> userCredentials = getUserProfile(username);
         return new Tutor(userCredentials.get("username"), userCredentials.get("name"),
-                authorisation_token, userCredentials.get("locality"),
+                "", userCredentials.get("locality"),
                 userCredentials.get("allowed_weekdays"), userCredentials.get("expertise"));
+    }
+
+    /**
+     * Given a username, return the user.
+     * @param username Username of the user.
+     * @return the User with this username if it exists.
+     */
+    public static User getUser(String username) throws Exception {
+        try {
+            switch (getUserType(username)) {
+                case STUDENT:
+                    return createStudentFrom(username);
+                case TUTOR:
+                    return createTutorFrom(username);
+            }
+            return null;
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     /**
@@ -163,13 +196,12 @@ public abstract class User {
                 "POST", "", json);
         HashMap<String, String> authJson = gson.fromJson(response.getJsonResponse(), HashMap.class);
         String access_token = authJson.get("access_token");
-        switch (getUserType(access_token)) {
-            case STUDENT:
-                return createStudentFrom(access_token);
-            case TUTOR:
-                return createTutorFrom(access_token);
+        User user;
+        if ((user = getUser(username)) != null) {
+            return user;
+        } else {
+            throw new UserNotFoundException("Invalid user type.");
         }
-        throw new UserNotFoundException("Invalid user type.");
     }
 
     public String getUsername() {return this.username;}
